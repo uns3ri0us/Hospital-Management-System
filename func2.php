@@ -10,8 +10,8 @@ if(isset($_POST['patsub1'])){
     $gender = htmlspecialchars(trim($_POST['gender']), ENT_QUOTES, 'UTF-8');
     $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
     $contact = htmlspecialchars(trim($_POST['contact']), ENT_QUOTES, 'UTF-8');
-    $password = $_POST['password'];
-    $cpassword = $_POST['cpassword'];
+    $password = trim($_POST['password']);
+    $cpassword = trim($_POST['cpassword']);
 
   if($password==$cpassword){
   	$stmt = $con->prepare("INSERT INTO patreg (fname, lname, gender, email, contact, password) VALUES (?, ?, ?, ?, ?, ?)");

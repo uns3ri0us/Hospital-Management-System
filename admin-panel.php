@@ -158,15 +158,36 @@ if(isset($_GET["generate_bill"])){
 
 }
 
-function get_specs(){
-  $con=mysqli_connect("localhost","root","","myhmsdb");
-  $query=mysqli_query($con,"select username,spec from doctb");
+function get_specs() {
+  // Database connection
+  $con = mysqli_connect("localhost", "root", "", "myhmsdb");
+
+  // Check connection
+  if (!$con) {
+      return json_encode(["error" => "Database connection failed: " . mysqli_connect_error()]);
+  }
+
+  // Prepare the query
+  $stmt = $con->prepare("SELECT username, spec FROM doctb");
+
+  // Execute and get the result
+  $stmt->execute();
+  $result = $stmt->get_result();
+
   $docarray = array();
-    while($row =mysqli_fetch_assoc($query))
-    {
-        $docarray[] = $row;
-    }
-    return json_encode($docarray);
+  while ($row = $result->fetch_assoc()) {
+      // Sanitize the output to avoid any potential XSS issues
+      $row['username'] = htmlspecialchars($row['username'], ENT_QUOTES, 'UTF-8');
+      $row['spec'] = htmlspecialchars($row['spec'], ENT_QUOTES, 'UTF-8');
+      $docarray[] = $row;
+  }
+
+  // Close statement and connection
+  $stmt->close();
+  $con->close();
+
+  // Encode as JSON and return
+  return json_encode($docarray);
 }
 
 ?>

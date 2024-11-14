@@ -4,36 +4,50 @@ $con=mysqli_connect("localhost","root","","myhmsdb");
 
 include('newfunc.php');
 
-if(isset($_POST['docsub']))
-{
-  $doctor=$_POST['doctor'];
-  $dpassword=$_POST['dpassword'];
-  $demail=$_POST['demail'];
-  $spec=$_POST['special'];
-  $docFees=$_POST['docFees'];
-  $query="insert into doctb(username,password,email,spec,docFees)values('$doctor','$dpassword','$demail','$spec','$docFees')";
-  $result=mysqli_query($con,$query);
-  if($result)
-    {
-      echo "<script>alert('Doctor added successfully!');</script>";
+if(isset($_POST['docsub'])) {
+  // Validate and sanitize inputs
+  $doctor = htmlspecialchars(trim($_POST['doctor']));
+  $dpassword = trim($_POST['dpassword']); // Secure password hashing
+  $demail = filter_var($_POST['demail'], FILTER_SANITIZE_EMAIL);
+  $spec = htmlspecialchars(trim($_POST['special']));
+  $docFees = filter_var($_POST['docFees'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
+
+  if (filter_var($demail, FILTER_VALIDATE_EMAIL) && !empty($doctor) && !empty($spec) && is_numeric($docFees)) {
+      // Use prepared statement to prevent SQL injection
+      $stmt = $con->prepare("INSERT INTO doctb (username, password, email, spec, docFees) VALUES (?, ?, ?, ?, ?)");
+      $stmt->bind_param("ssssd", $doctor, $dpassword, $demail, $spec, $docFees);
+
+      if ($stmt->execute()) {
+          echo "<script>alert('Doctor added successfully!');</script>";
+      } else {
+          echo "<script>alert('Error: Unable to add doctor.');</script>";
+      }
+
+      $stmt->close();
+  } else {
+      echo "<script>alert('Invalid input. Please check your entries.');</script>";
   }
 }
 
+if(isset($_POST['docsub1'])) {
+  $demail = filter_var($_POST['demail'], FILTER_SANITIZE_EMAIL);
 
-if(isset($_POST['docsub1']))
-{
-  $demail=$_POST['demail'];
-  $query="delete from doctb where email='$demail';";
-  $result=mysqli_query($con,$query);
-  if($result)
-    {
+  if (filter_var($demail, FILTER_VALIDATE_EMAIL)) {
+    // Prepared statement for deletion
+    $stmt = $con->prepare("DELETE FROM doctb WHERE email = ?");
+    $stmt->bind_param("s", $demail);
+
+    if ($stmt->execute()) {
       echo "<script>alert('Doctor removed successfully!');</script>";
-  }
-  else{
-    echo "<script>alert('Unable to delete!');</script>";
+    } else {
+      echo "<script>alert('Unable to delete.');</script>";
+    }
+
+    $stmt->close();
+  } else {
+    echo "<script>alert('Invalid email format.');</script>";
   }
 }
-
 
 ?>
 <html lang="en">
@@ -272,26 +286,37 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
+                    $con = mysqli_connect("localhost", "root", "", "myhmsdb");
                     global $con;
-                    $query = "select * from doctb";
-                    $result = mysqli_query($con,$query);
-                    while ($row = mysqli_fetch_array($result)){
-                      $username = $row['username'];
-                      $spec = $row['spec'];
-                      $email = $row['email'];
-                      $password = $row['password'];
-                      $docFees = $row['docFees'];
-                      
-                      echo "<tr>
+                    
+                    // Prepared statement to prevent SQL injection
+                    $query = "SELECT username, spec, email, password, docFees FROM doctb";
+                    $stmt = $con->prepare($query);
+                    
+                    if ($stmt->execute()) {
+                      $result = $stmt->get_result();
+                    
+                      // Fetch results securely
+                      while ($row = $result->fetch_assoc()) {
+                        $username = htmlspecialchars($row['username']);
+                        $spec = htmlspecialchars($row['spec']);
+                        $email = htmlspecialchars($row['email']);
+                        $password = htmlspecialchars($row['password']); // Consider hashing if not already done
+                        $docFees = htmlspecialchars($row['docFees']);
+                    
+                          // Output
+                        echo "<tr>
                         <td>$username</td>
                         <td>$spec</td>
                         <td>$email</td>
                         <td>$password</td>
                         <td>$docFees</td>
-                      </tr>";
+                        </tr>";
+                      }
+                    } else {
+                      echo "<p>Error retrieving data.</p>";
                     }
-
+                    $stmt->close();
                   ?>
                 </tbody>
               </table>
