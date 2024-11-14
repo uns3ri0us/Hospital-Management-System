@@ -93,7 +93,11 @@ if(isset($_POST['doc_sub']))
   $dpassword=$_POST['dpassword'];
   $demail=$_POST['demail'];
   $docFees=$_POST['docFees'];
-	$query="insert into doctb(username,password,email,docFees)values('$doctor','$dpassword','$demail','$docFees')";
+
+  $dsalt = bin2hex(random_bytes(length: 15)); 
+  $dhashed_password = hash('sha256', $dpassword . $dsalt);
+
+	$query="insert into doctb(username,password,email,docFees,salt)values('$doctor','$dhashedpassword','$demail','$docFees','$dsalt')";
 	$result=mysqli_query($con,$query);
 	if($result)
 		header("Location:adddoc.php");

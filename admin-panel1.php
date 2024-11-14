@@ -11,7 +11,11 @@ if(isset($_POST['docsub']))
   $demail=$_POST['demail'];
   $spec=$_POST['special'];
   $docFees=$_POST['docFees'];
-  $query="insert into doctb(username,password,email,spec,docFees)values('$doctor','$dpassword','$demail','$spec','$docFees')";
+
+  $dsalt = bin2hex(random_bytes(length: 15)); 
+  $dhashed_password = hash('sha256', $dpassword . $dsalt);
+
+  $query="insert into doctb(username,password,email,spec,docFees,salt)values('$doctor','$dhashed_password','$demail','$spec','$docFees','$dsalt')";
   $result=mysqli_query($con,$query);
   if($result)
     {
