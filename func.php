@@ -1,41 +1,63 @@
 <?php
 session_start();
-$con=mysqli_connect("localhost","root","","myhmsdb");
+$con = mysqli_connect("localhost", "root", "", "myhmsdb");
 if (!$con) {
-  die("Database connection failed: " . mysqli_connect_error());
+    die("Database connection failed: " . mysqli_connect_error());
 }
-if(isset($_POST['patsub'])){
-	$email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
-  if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-    echo("<script>alert('Invalid email format!'); window.location.href = 'index1.php';</script>");
-    exit;
-  }
-  $password = trim($_POST['password2']);
 
-	$stmt = $con->prepare("SELECT * FROM patreg WHERE email = ? AND password = ?");
-    $stmt->bind_param("ss", $email, $password);
+if (isset($_POST['patsub'])) {
+    $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
+
+    // Validate email format
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        echo("<script>alert('Invalid email format!'); window.location.href = 'index1.php';</script>");
+        exit;
+    }
+
+    $password = trim($_POST['password2']);
+
+    // Step 1: Retrieve the stored salt and hashed password from the database
+    $stmt = $con->prepare("SELECT * FROM patreg WHERE email = ?");
+    $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
 
-	if ($result->num_rows == 1) {
-    while ($row = $result->fetch_assoc()) {
-      $_SESSION['pid'] = $row['pid'];
-      $_SESSION['username'] = htmlspecialchars($row['fname'] . " " . $row['lname']);
-      $_SESSION['fname'] = htmlspecialchars($row['fname']);
-      $_SESSION['lname'] = htmlspecialchars($row['lname']);
-      $_SESSION['gender'] = htmlspecialchars($row['gender']);
-      $_SESSION['contact'] = htmlspecialchars($row['contact']);
-      $_SESSION['email'] = htmlspecialchars($row['email']);
+    if ($result->num_rows == 1) {
+        $row = $result->fetch_assoc();
+
+        // Retrieve the stored salt and hashed password
+        $stored_salt = $row['salt'];
+        $stored_hashed_password = $row['password'];
+
+        // Step 2: Hash the input password with the retrieved salt
+        $input_hashed_password = hash('sha256', $password . $stored_salt);
+
+        // Step 3: Compare the hashed input password with the stored hashed password
+        if ($input_hashed_password === $stored_hashed_password) {
+            // Password is correct; set session variables
+            $_SESSION['pid'] = $row['pid'];
+            $_SESSION['username'] = htmlspecialchars($row['fname'] . " " . $row['lname']);
+            $_SESSION['fname'] = htmlspecialchars($row['fname']);
+            $_SESSION['lname'] = htmlspecialchars($row['lname']);
+            $_SESSION['gender'] = htmlspecialchars($row['gender']);
+            $_SESSION['contact'] = htmlspecialchars($row['contact']);
+            $_SESSION['email'] = htmlspecialchars($row['email']);
+
+            // Redirect to the admin panel
+            header("Location: admin-panel.php");
+            exit;
+        } else {
+            // Incorrect password
+            echo("<script>alert('Invalid Username or Password. Try Again!');
+                  window.location.href = 'index1.php';</script>");
+        }
+    } else {
+        // Email not found
+        echo("<script>alert('Invalid Username or Password. Try Again!');
+              window.location.href = 'index1.php';</script>");
     }
-		header("Location:admin-panel.php");
-	}
-  else {
-    echo("<script>alert('Invalid Username or Password. Try Again!');
-          window.location.href = 'index1.php';</script>");
-    // header("Location:error.php");
-  }
-  $stmt->close();
-		
+
+    $stmt->close();
 }
 if(isset($_POST['update_data']))
 {
@@ -71,7 +93,11 @@ if(isset($_POST['doc_sub']))
   $dpassword=$_POST['dpassword'];
   $demail=$_POST['demail'];
   $docFees=$_POST['docFees'];
-	$query="insert into doctb(username,password,email,docFees)values('$doctor','$dpassword','$demail','$docFees')";
+
+  $dsalt = bin2hex(random_bytes(length: 15)); 
+  $dhashed_password = hash('sha256', $dpassword . $dsalt);
+
+	$query="insert into doctb(username,password,email,docFees,salt)values('$doctor','$dhashedpassword','$demail','$docFees','$dsalt')";
 	$result=mysqli_query($con,$query);
 	if($result)
 		header("Location:adddoc.php");

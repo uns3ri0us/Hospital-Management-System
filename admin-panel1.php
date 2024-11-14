@@ -4,6 +4,25 @@ $con=mysqli_connect("localhost","root","","myhmsdb");
 
 include('newfunc.php');
 
+if(isset($_POST['docsub']))
+{
+  $doctor=$_POST['doctor'];
+  $dpassword=$_POST['dpassword'];
+  $demail=$_POST['demail'];
+  $spec=$_POST['special'];
+  $docFees=$_POST['docFees'];
+
+  $dsalt = bin2hex(random_bytes(length: 15)); 
+  $dhashed_password = hash('sha256', $dpassword . $dsalt);
+
+  $query="insert into doctb(username,password,email,spec,docFees,salt)values('$doctor','$dhashed_password','$demail','$spec','$docFees','$dsalt')";
+  $result=mysqli_query($con,$query);
+  if($result)
+    {
+      echo "<script>alert('Doctor added successfully!');</script>";
+  }
+}
+
 if(isset($_POST['docsub'])) {
   // Validate and sanitize inputs
   $doctor = htmlspecialchars(trim($_POST['doctor']));
