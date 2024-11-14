@@ -1,48 +1,66 @@
 <?php
 session_start();
 $con=mysqli_connect("localhost","root","","myhmsdb");
+if (!$con) {
+  die("Database connection failed: " . mysqli_connect_error());
+}
 if(isset($_POST['patsub1'])){
-	$fname=$_POST['fname'];
-  $lname=$_POST['lname'];
-  $gender=$_POST['gender'];
-  $email=$_POST['email'];
-  $contact=$_POST['contact'];
-	$password=$_POST['password'];
-  $cpassword=$_POST['cpassword'];
+	$fname = htmlspecialchars(trim($_POST['fname']), ENT_QUOTES, 'UTF-8');
+    $lname = htmlspecialchars(trim($_POST['lname']), ENT_QUOTES, 'UTF-8');
+    $gender = htmlspecialchars(trim($_POST['gender']), ENT_QUOTES, 'UTF-8');
+    $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
+    $contact = htmlspecialchars(trim($_POST['contact']), ENT_QUOTES, 'UTF-8');
+    $password = $_POST['password'];
+    $cpassword = $_POST['cpassword'];
+
   if($password==$cpassword){
-  	$query="insert into patreg(fname,lname,gender,email,contact,password,cpassword) values ('$fname','$lname','$gender','$email','$contact','$password','$cpassword');";
-    $result=mysqli_query($con,$query);
-    if($result){
-        $_SESSION['username'] = $_POST['fname']." ".$_POST['lname'];
-        $_SESSION['fname'] = $_POST['fname'];
-        $_SESSION['lname'] = $_POST['lname'];
-        $_SESSION['gender'] = $_POST['gender'];
-        $_SESSION['contact'] = $_POST['contact'];
-        $_SESSION['email'] = $_POST['email'];
-        header("Location:admin-panel.php");
-    } 
+  	$stmt = $con->prepare("INSERT INTO patreg (fname, lname, gender, email, contact, password) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssss", $fname, $lname, $gender, $email, $contact, $password);
 
-    $query1 = "select * from patreg;";
-    $result1 = mysqli_query($con,$query1);
-    if($result1){
-      $_SESSION['pid'] = $row['pid'];
+    if ($stmt->execute()) {
+      $_SESSION['username'] = $fname . " " . $lname;
+      $_SESSION['fname'] = $fname;
+      $_SESSION['lname'] = $lname;
+      $_SESSION['gender'] = $gender;
+      $_SESSION['contact'] = $contact;
+      $_SESSION['email'] = $email;
+            
+      // Retrieve and set patient ID (pid)
+      $pid_query = $con->prepare("SELECT pid FROM patreg WHERE email = ?");
+      $pid_query->bind_param("s", $email);
+      $pid_query->execute();
+      $pid_query_result = $pid_query->get_result();
+
+      if ($pid_query_result->num_rows > 0) {
+        $row = $pid_query_result->fetch_assoc();
+        $_SESSION['pid'] = $row['pid'];
+      }
+
+      header("Location: admin-panel.php");
+    } else {
+        echo "<script>alert('Registration failed. Please try again.');</script>";
     }
-
   }
   else{
     header("Location:error1.php");
   }
 }
-if(isset($_POST['update_data']))
-{
-	$contact=$_POST['contact'];
-	$status=$_POST['status'];
-	$query="update appointmenttb set payment='$status' where contact='$contact';";
-	$result=mysqli_query($con,$query);
-	if($result)
-		header("Location:updated.php");
-}
+if (isset($_POST['update_data'])) {
+  $contact = htmlspecialchars(trim($_POST['contact']), ENT_QUOTES, 'UTF-8');
+  $status = htmlspecialchars(trim($_POST['status']), ENT_QUOTES, 'UTF-8');
 
+  // Use prepared statement for update
+  $stmt = $con->prepare("UPDATE appointmenttb SET payment = ? WHERE contact = ?");
+  $stmt->bind_param("ss", $status, $contact);
+
+  if ($stmt->execute()) {
+    header("Location: updated.php");
+  } else {
+    echo "<script>alert('Update failed. Please try again.');</script>";
+  }
+
+  $stmt->close();
+}
 
 
 
@@ -59,14 +77,22 @@ if(isset($_POST['update_data']))
 // 	}
 // }
 
-if(isset($_POST['doc_sub']))
-{
-	$name=$_POST['name'];
-	$query="insert into doctb(name)values('$name')";
-	$result=mysqli_query($con,$query);
-	if($result)
-		header("Location:adddoc.php");
+if (isset($_POST['doc_sub'])) {
+  $name = htmlspecialchars(trim($_POST['name']), ENT_QUOTES, 'UTF-8');
+
+  // Use prepared statement to insert doctor
+  $stmt = $con->prepare("INSERT INTO doctb (name) VALUES (?)");
+  $stmt->bind_param("s", $name);
+
+  if ($stmt->execute()) {
+      header("Location: adddoc.php");
+  } else {
+      echo "<script>alert('Adding doctor failed. Please try again.');</script>";
+  }
+
+  $stmt->close();
 }
+
 function display_admin_panel(){
 	echo '<!DOCTYPE html>
 <html lang="en">

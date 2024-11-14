@@ -1,21 +1,31 @@
 <?php
 session_start();
 $con=mysqli_connect("localhost","root","","myhmsdb");
+if (!$con) {
+  die("Database connection failed: " . mysqli_connect_error());
+}
 if(isset($_POST['patsub'])){
-	$email=$_POST['email'];
-	$password=$_POST['password2'];
-	$query="select * from patreg where email='$email' and password='$password';";
-	$result=mysqli_query($con,$query);
-	if(mysqli_num_rows($result)==1)
-	{
-		while($row=mysqli_fetch_array($result,MYSQLI_ASSOC)){
+	$email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
+  if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    echo("<script>alert('Invalid email format!'); window.location.href = 'index1.php';</script>");
+    exit;
+  }
+  $password = trim($_POST['password2']);
+
+	$stmt = $con->prepare("SELECT * FROM patreg WHERE email = ? AND password = ?");
+    $stmt->bind_param("ss", $email, $password);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+	if ($result->num_rows == 1) {
+    while ($row = $result->fetch_assoc()) {
       $_SESSION['pid'] = $row['pid'];
-      $_SESSION['username'] = $row['fname']." ".$row['lname'];
-      $_SESSION['fname'] = $row['fname'];
-      $_SESSION['lname'] = $row['lname'];
-      $_SESSION['gender'] = $row['gender'];
-      $_SESSION['contact'] = $row['contact'];
-      $_SESSION['email'] = $row['email'];
+      $_SESSION['username'] = htmlspecialchars($row['fname'] . " " . $row['lname']);
+      $_SESSION['fname'] = htmlspecialchars($row['fname']);
+      $_SESSION['lname'] = htmlspecialchars($row['lname']);
+      $_SESSION['gender'] = htmlspecialchars($row['gender']);
+      $_SESSION['contact'] = htmlspecialchars($row['contact']);
+      $_SESSION['email'] = htmlspecialchars($row['email']);
     }
 		header("Location:admin-panel.php");
 	}
@@ -24,16 +34,19 @@ if(isset($_POST['patsub'])){
           window.location.href = 'index1.php';</script>");
     // header("Location:error.php");
   }
+  $stmt->close();
 		
 }
 if(isset($_POST['update_data']))
 {
-	$contact=$_POST['contact'];
-	$status=$_POST['status'];
-	$query="update appointmenttb set payment='$status' where contact='$contact';";
-	$result=mysqli_query($con,$query);
+	$contact = filter_var(trim($_POST['contact']), FILTER_SANITIZE_STRING);
+  $status = filter_var(trim($_POST['status']), FILTER_SANITIZE_STRING);
+	$stmt = $con->prepare("UPDATE appointmenttb SET payment = ? WHERE contact = ?");
+  $stmt->bind_param("ss", $status, $contact);
+  $stmt->execute();
 	if($result)
 		header("Location:updated.php");
+    $stmt->close();
 }
 
 

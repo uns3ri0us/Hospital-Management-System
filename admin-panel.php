@@ -15,8 +15,7 @@ $con=mysqli_connect("localhost","root","","myhmsdb");
 
 
 
-if(isset($_POST['app-submit']))
-{
+if (isset($_POST['app-submit'])) {
   $pid = $_SESSION['pid'];
   $username = $_SESSION['username'];
   $email = $_SESSION['email'];
@@ -24,56 +23,76 @@ if(isset($_POST['app-submit']))
   $lname = $_SESSION['lname'];
   $gender = $_SESSION['gender'];
   $contact = $_SESSION['contact'];
-  $doctor=$_POST['doctor'];
-  $email=$_SESSION['email'];
-  # $fees=$_POST['fees'];
-  $docFees=$_POST['docFees'];
+  $doctor = $_POST['doctor'];
+  $docFees = $_POST['docFees'];
+  $appdate = $_POST['appdate'];
+  $apptime = $_POST['apptime'];
+    
+  // Check if form values are set and are valid
+  if (empty($doctor) || empty($docFees) || empty($appdate) || empty($apptime)) {
+    echo "<script>alert('All fields are required!');</script>";
+    exit;
+  }
 
-  $appdate=$_POST['appdate'];
-  $apptime=$_POST['apptime'];
+  // Convert and validate date and time
   $cur_date = date("Y-m-d");
   date_default_timezone_set('Asia/Kolkata');
   $cur_time = date("H:i:s");
-  $apptime1 = strtotime($apptime);
   $appdate1 = strtotime($appdate);
-	
-  if(date("Y-m-d",$appdate1)>=$cur_date){
-    if((date("Y-m-d",$appdate1)==$cur_date and date("H:i:s",$apptime1)>$cur_time) or date("Y-m-d",$appdate1)>$cur_date) {
-      $check_query = mysqli_query($con,"select apptime from appointmenttb where doctor='$doctor' and appdate='$appdate' and apptime='$apptime'");
+  $apptime1 = strtotime($apptime);
 
-        if(mysqli_num_rows($check_query)==0){
-          $query=mysqli_query($con,"insert into appointmenttb(pid,fname,lname,gender,email,contact,doctor,docFees,appdate,apptime,userStatus,doctorStatus) values($pid,'$fname','$lname','$gender','$email','$contact','$doctor','$docFees','$appdate','$apptime','1','1')");
+  // Check if appointment is scheduled for a future date and time
+  if (date("Y-m-d", $appdate1) >= $cur_date) {
+    if ((date("Y-m-d", $appdate1) == $cur_date && date("H:i:s", $apptime1) > $cur_time) || date("Y-m-d", $appdate1) > $cur_date) {
+            
+      // Prepare statement for checking availability
+      $check_query = $con->prepare("SELECT apptime FROM appointmenttb WHERE doctor = ? AND appdate = ? AND apptime = ?");
+      $check_query->bind_param("sss", $doctor, $appdate, $apptime);
+      $check_query->execute();
+      $check_result = $check_query->get_result();
 
-          if($query)
-          {
-            echo "<script>alert('Your appointment successfully booked');</script>";
-          }
-          else{
-            echo "<script>alert('Unable to process your request. Please try again!');</script>";
-          }
+      if ($check_result->num_rows == 0) {
+        // Prepare statement to insert appointment details
+        $query = $con->prepare("INSERT INTO appointmenttb (pid, fname, lname, gender, email, contact, doctor, docFees, appdate, apptime, userStatus, doctorStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '1', '1')");
+        $query->bind_param("isssssssss", $pid, $fname, $lname, $gender, $email, $contact, $doctor, $docFees, $appdate, $apptime);
+                
+        if ($query->execute()) {
+          echo "<script>alert('Your appointment successfully booked');</script>";
+        } else {
+          echo "<script>alert('Unable to process your request. Please try again!');</script>";
+        }
+      } else {
+          echo "<script>alert('We are sorry to inform that the doctor is not available at this time or date. Please choose a different time or date!');</script>";
       }
-      else{
-        echo "<script>alert('We are sorry to inform that the doctor is not available in this time or date. Please choose different time or date!');</script>";
-      }
+
+    } else {
+        echo "<script>alert('Please select a time or date in the future!');</script>";
     }
-    else{
-      echo "<script>alert('Select a time or date in the future!');</script>";
-    }
+  } else {
+      echo "<script>alert('Please select a time or date in the future!');</script>";
   }
-  else{
-      echo "<script>alert('Select a time or date in the future!');</script>";
-  }
-  
 }
 
-if(isset($_GET['cancel']))
-  {
-    $query=mysqli_query($con,"update appointmenttb set userStatus='0' where ID = '".$_GET['ID']."'");
-    if($query)
-    {
-      echo "<script>alert('Your appointment successfully cancelled');</script>";
+if (isset($_GET['cancel'])) {
+  // Sanitize and validate the ID to make sure it's an integer
+  $id = filter_var($_GET['ID'], FILTER_VALIDATE_INT);
+
+  // Proceed only if the ID is valid
+  if ($id !== false) {
+    // Use a prepared statement to prevent SQL injection
+    $query = $con->prepare("UPDATE appointmenttb SET userStatus = '0' WHERE ID = ?");
+    $query->bind_param("i", $id);  // Bind the ID as an integer parameter
+
+    if ($query->execute()) {
+      echo "<script>alert('Your appointment was successfully cancelled');</script>";
+    } else {
+      echo "<script>alert('Unable to cancel the appointment. Please try again.');</script>";
     }
+  } else {
+    // Handle the case where ID is invalid
+    echo "<script>alert('Invalid appointment ID.');</script>";
   }
+}
 
 
 
