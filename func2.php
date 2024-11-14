@@ -6,16 +6,19 @@ if (!$con) {
 }
 if(isset($_POST['patsub1'])){
 	$fname = htmlspecialchars(trim($_POST['fname']), ENT_QUOTES, 'UTF-8');
-    $lname = htmlspecialchars(trim($_POST['lname']), ENT_QUOTES, 'UTF-8');
-    $gender = htmlspecialchars(trim($_POST['gender']), ENT_QUOTES, 'UTF-8');
-    $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
-    $contact = htmlspecialchars(trim($_POST['contact']), ENT_QUOTES, 'UTF-8');
-    $password = $_POST['password'];
-    $cpassword = $_POST['cpassword'];
+  $lname = htmlspecialchars(trim($_POST['lname']), ENT_QUOTES, 'UTF-8');
+  $gender = htmlspecialchars(trim($_POST['gender']), ENT_QUOTES, 'UTF-8');
+  $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
+  $contact = htmlspecialchars(trim($_POST['contact']), ENT_QUOTES, 'UTF-8');
+  $password = $_POST['password'];
+  $cpassword = $_POST['cpassword'];
 
   if($password==$cpassword){
-  	$stmt = $con->prepare("INSERT INTO patreg (fname, lname, gender, email, contact, password) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssss", $fname, $lname, $gender, $email, $contact, $password);
+    $salt = bin2hex(random_bytes(length: 15)); 
+    $hashed_password = hash('sha256', $password . $salt);
+
+  	$stmt = $con->prepare("INSERT INTO patreg (fname, lname, gender, email, contact, password, salt) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssssss", $fname, $lname, $gender, $email, $contact, $hashed_password, $salt);
 
     if ($stmt->execute()) {
       $_SESSION['username'] = $fname . " " . $lname;
