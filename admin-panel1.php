@@ -299,7 +299,6 @@ if(isset($_POST['docsub1'])) {
                     <th scope="col">Doctor Name</th>
                     <th scope="col">Specialization</th>
                     <th scope="col">Email</th>
-                    <th scope="col">Password</th>
                     <th scope="col">Fees</th>
                   </tr>
                 </thead>
@@ -309,7 +308,7 @@ if(isset($_POST['docsub1'])) {
                     global $con;
                     
                     // Prepared statement to prevent SQL injection
-                    $query = "SELECT username, spec, email, password, docFees FROM doctb";
+                    $query = "SELECT username, spec, email, docFees FROM doctb";
                     $stmt = $con->prepare($query);
                     
                     if ($stmt->execute()) {
@@ -320,7 +319,6 @@ if(isset($_POST['docsub1'])) {
                         $username = htmlspecialchars($row['username']);
                         $spec = htmlspecialchars($row['spec']);
                         $email = htmlspecialchars($row['email']);
-                        $password = htmlspecialchars($row['password']); // Consider hashing if not already done
                         $docFees = htmlspecialchars($row['docFees']);
                     
                           // Output
@@ -328,7 +326,6 @@ if(isset($_POST['docsub1'])) {
                         <td>$username</td>
                         <td>$spec</td>
                         <td>$email</td>
-                        <td>$password</td>
                         <td>$docFees</td>
                         </tr>";
                       }
