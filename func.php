@@ -8,7 +8,6 @@ if (!$con) {
 if (isset($_POST['patsub'])) {
     $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
 
-    // Validate email format
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         echo("<script>alert('Invalid email format!'); window.location.href = 'index1.php';</script>");
         exit;
@@ -16,7 +15,6 @@ if (isset($_POST['patsub'])) {
 
     $password = trim($_POST['password2']);
 
-    // Step 1: Retrieve the stored salt and hashed password from the database
     $stmt = $con->prepare("SELECT * FROM patreg WHERE email = ?");
     $stmt->bind_param("s", $email);
     $stmt->execute();
@@ -25,16 +23,12 @@ if (isset($_POST['patsub'])) {
     if ($result->num_rows == 1) {
         $row = $result->fetch_assoc();
 
-        // Retrieve the stored salt and hashed password
         $stored_salt = $row['salt'];
         $stored_hashed_password = $row['password'];
 
-        // Step 2: Hash the input password with the retrieved salt
         $input_hashed_password = hash('sha256', $password . $stored_salt);
 
-        // Step 3: Compare the hashed input password with the stored hashed password
         if ($input_hashed_password === $stored_hashed_password) {
-            // Password is correct; set session variables
             $_SESSION['pid'] = $row['pid'];
             $_SESSION['username'] = htmlspecialchars($row['fname'] . " " . $row['lname']);
             $_SESSION['fname'] = htmlspecialchars($row['fname']);
@@ -43,16 +37,13 @@ if (isset($_POST['patsub'])) {
             $_SESSION['contact'] = htmlspecialchars($row['contact']);
             $_SESSION['email'] = htmlspecialchars($row['email']);
 
-            // Redirect to the admin panel
             header("Location: admin-panel.php");
             exit;
         } else {
-            // Incorrect password
             echo("<script>alert('Invalid Username or Password. Try Again!');
                   window.location.href = 'index1.php';</script>");
         }
     } else {
-        // Email not found
         echo("<script>alert('Invalid Username or Password. Try Again!');
               window.location.href = 'index1.php';</script>");
     }
