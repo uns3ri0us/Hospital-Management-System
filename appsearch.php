@@ -12,10 +12,13 @@
 include("newfunc.php");
 if(isset($_POST['app_search_submit']))
 {
-	$contact=$_POST['app_contact'];
-	$query = "select * from appointmenttb where contact= '$contact';";
-  $result = mysqli_query($con,$query);
-  $row=mysqli_fetch_array($result);
+	$contact = trim($_POST['app_contact']);
+
+    // Prepare and execute a safe SQL query using a prepared statement
+    $stmt = $con->prepare("SELECT * FROM appointmenttb WHERE contact = ?");
+    $stmt->bind_param("s", $contact);
+    $stmt->execute();
+    $result = $stmt->get_result();
   if($row['fname']=="" & $row['lname']=="" & $row['email']=="" & $row['contact']=="" & $row['doctor']=="" & $row['docFees']=="" & $row['appdate']=="" & $row['apptime']==""){
     echo "<script> alert('No entries found! Please enter valid details'); 
           window.location.href = 'admin-panel1.php#list-doc';</script>";
@@ -76,7 +79,7 @@ if(isset($_POST['app_search_submit']))
     echo "</tbody></table><center><a href='admin-panel1.php' class='btn btn-light'>Back to your Dashboard</a></div></center></div></div></div>";
   }
   }
-	
+	$stmt->close();
 ?>
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
