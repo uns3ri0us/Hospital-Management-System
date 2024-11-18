@@ -8,7 +8,6 @@ if (isset($_POST['docsub1'])) {
   $dname = trim($_POST['username3']);
   $dpass = trim($_POST['password3']);
 
-  // Step 1: Retrieve salt and hashed password for the entered username
   $stmt = $con->prepare("SELECT * FROM doctb WHERE username = ?");
   $stmt->bind_param("s", $dname);
   $stmt->execute();
@@ -17,25 +16,20 @@ if (isset($_POST['docsub1'])) {
   if ($result->num_rows == 1) {
       $row = $result->fetch_assoc();
 
-      // Step 2: Get the stored salt and hashed password
       $stored_salt = $row['salt'];
       $stored_hashed_password = $row['password'];
 
-      // Step 3: Hash the input password with the stored salt
       $input_hashed_password = hash('sha256', $dpass . $stored_salt);
 
-      // Step 4: Compare the hashed input password with the stored hashed password
       if ($input_hashed_password === $stored_hashed_password) {
           $_SESSION['dname'] = htmlspecialchars($row['username']);
           header("Location: doctor-panel.php");
           exit;
       } else {
-          // Incorrect password
           echo "<script>alert('Invalid Username or Password. Try Again!');
                 window.location.href = 'index.php';</script>";
       }
   } else {
-      // Username not found
       echo "<script>alert('Invalid Username or Password. Try Again!');
             window.location.href = 'index.php';</script>";
   }
