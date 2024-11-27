@@ -4,25 +4,6 @@ $con=mysqli_connect("localhost","root","","myhmsdb");
 
 include('newfunc.php');
 
-if(isset($_POST['docsub']))
-{
-  $doctor=$_POST['doctor'];
-  $dpassword=$_POST['dpassword'];
-  $demail=$_POST['demail'];
-  $spec=$_POST['special'];
-  $docFees=$_POST['docFees'];
-
-  $dsalt = bin2hex(random_bytes(length: 15)); 
-  $dhashed_password = hash('sha256', $dpassword . $dsalt);
-
-  $query="insert into doctb(username,password,email,spec,docFees,salt)values('$doctor','$dhashed_password','$demail','$spec','$docFees','$dsalt')";
-  $result=mysqli_query($con,$query);
-  if($result)
-    {
-      echo "<script>alert('Doctor added successfully!');</script>";
-  }
-}
-
 if(isset($_POST['docsub'])) {
   // Validate and sanitize inputs
   $doctor = htmlspecialchars(trim($_POST['doctor']));
@@ -31,10 +12,13 @@ if(isset($_POST['docsub'])) {
   $spec = htmlspecialchars(trim($_POST['special']));
   $docFees = filter_var($_POST['docFees'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
 
+  $dsalt = bin2hex(random_bytes(length: 15)); 
+  $dhashed_password = hash('sha256', $dpassword . $dsalt);
+
   if (filter_var($demail, FILTER_VALIDATE_EMAIL) && !empty($doctor) && !empty($spec) && is_numeric($docFees)) {
       // Use prepared statement to prevent SQL injection
-      $stmt = $con->prepare("INSERT INTO doctb (username, password, email, spec, docFees) VALUES (?, ?, ?, ?, ?)");
-      $stmt->bind_param("ssssd", $doctor, $dpassword, $demail, $spec, $docFees);
+      $stmt = $con->prepare("INSERT INTO doctb (username, password, email, spec, docFees, salt) VALUES (?, ?, ?, ?, ?, ?)");
+      $stmt->bind_param("ssssds", $doctor, $dhashed_password, $demail, $spec, $docFees, $dsalt);
 
       if ($stmt->execute()) {
           echo "<script>alert('Doctor added successfully!');</script>";
@@ -299,7 +283,6 @@ if(isset($_POST['docsub1'])) {
                     <th scope="col">Doctor Name</th>
                     <th scope="col">Specialization</th>
                     <th scope="col">Email</th>
-                    <th scope="col">Password</th>
                     <th scope="col">Fees</th>
                   </tr>
                 </thead>
@@ -309,7 +292,7 @@ if(isset($_POST['docsub1'])) {
                     global $con;
                     
                     // Prepared statement to prevent SQL injection
-                    $query = "SELECT username, spec, email, password, docFees FROM doctb";
+                    $query = "SELECT username, spec, email, docFees FROM doctb";
                     $stmt = $con->prepare($query);
                     
                     if ($stmt->execute()) {
@@ -320,7 +303,6 @@ if(isset($_POST['docsub1'])) {
                         $username = htmlspecialchars($row['username']);
                         $spec = htmlspecialchars($row['spec']);
                         $email = htmlspecialchars($row['email']);
-                        $password = htmlspecialchars($row['password']); // Consider hashing if not already done
                         $docFees = htmlspecialchars($row['docFees']);
                     
                           // Output
@@ -328,7 +310,6 @@ if(isset($_POST['docsub1'])) {
                         <td>$username</td>
                         <td>$spec</td>
                         <td>$email</td>
-                        <td>$password</td>
                         <td>$docFees</td>
                         </tr>";
                       }
@@ -362,7 +343,6 @@ if(isset($_POST['docsub1'])) {
                     <th scope="col">Gender</th>
                     <th scope="col">Email</th>
                     <th scope="col">Contact</th>
-                    <th scope="col">Password</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -378,7 +358,6 @@ if(isset($_POST['docsub1'])) {
                       $gender = $row['gender'];
                       $email = $row['email'];
                       $contact = $row['contact'];
-                      $password = $row['password'];
                       
                       echo "<tr>
                         <td>$pid</td>
@@ -387,7 +366,6 @@ if(isset($_POST['docsub1'])) {
                         <td>$gender</td>
                         <td>$email</td>
                         <td>$contact</td>
-                        <td>$password</td>
                       </tr>";
                     }
 
