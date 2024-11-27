@@ -15,7 +15,7 @@ if(isset($_POST['adsub'])){
         $admin = $result->fetch_assoc();
         
         // Verify the password
-        if (password_verify($password, $admin['password'])) {
+        if ($password == $admin['password']) {
             $_SESSION['username'] = $username;
             header("Location: admin-panel1.php");
         } else {
