@@ -1,9 +1,6 @@
 <?php
 // session_start();
 $con=mysqli_connect("localhost","root","","myhmsdb");
-if (!$con) {
-  die("Database connection failed: " . mysqli_connect_error());
-}
 // if(isset($_POST['submit'])){
 //  $username=$_POST['username'];
 //  $password=$_POST['password'];
@@ -18,16 +15,14 @@ if (!$con) {
 //  else
 //   header("Location:error.php");
 // }
-if (isset($_POST['update_data'])) {
-  $contact = mysqli_real_escape_string($con, $_POST['contact']);
-  $status = mysqli_real_escape_string($con, $_POST['status']);
-  $query = "UPDATE appointmenttb SET payment='$status' WHERE contact='$contact'";
-  if (mysqli_query($con, $query)) {
-    header("Location:updated.php");
-    exit();
-  } else {
-    echo "Error updating record: " . mysqli_error($con);
-  }
+if(isset($_POST['update_data']))
+{
+ $contact=$_POST['contact'];
+ $status=$_POST['status'];
+ $query="update appointmenttb set payment='$status' where contact='$contact';";
+ $result=mysqli_query($con,$query);
+ if($result)
+  header("Location:updated.php");
 }
 
 // function display_docs()
@@ -46,26 +41,27 @@ if (isset($_POST['update_data'])) {
 
 function display_specs() {
   global $con;
-  $query = "SELECT DISTINCT spec FROM doctb";
-  $result = mysqli_query($con, $query);
-
-  while ($row = mysqli_fetch_array($result)) {
-      $spec = htmlspecialchars($row['spec']);  // Sanitize output
-      echo "<option data-value='$spec'>$spec</option>";
+  $query="select distinct(spec) from doctb";
+  $result=mysqli_query($con,$query);
+  while($row=mysqli_fetch_array($result))
+  {
+    $spec=$row['spec'];
+    echo '<option data-value="'.$spec.'">'.$spec.'</option>';
   }
 }
 
-function display_docs() {
-  global $con;
-  $query = "SELECT * FROM doctb";
-  $result = mysqli_query($con, $query);
-
-  while ($row = mysqli_fetch_array($result)) {
-      $username = htmlspecialchars($row['username']);
-      $price = htmlspecialchars($row['docFees']);
-      $spec = htmlspecialchars($row['spec']);
-      echo "<option value='$username' data-value='$price' data-spec='$spec'>$username</option>";
-  }
+function display_docs()
+{
+ global $con;
+ $query = "select * from doctb";
+ $result = mysqli_query($con,$query);
+ while( $row = mysqli_fetch_array($result) )
+ {
+  $username = $row['username'];
+  $price = $row['docFees'];
+  $spec = $row['spec'];
+  echo '<option value="' .$username. '" data-value="'.$price.'" data-spec="'.$spec.'">'.$username.'</option>';
+ }
 }
 
 // function display_specs() {
@@ -81,15 +77,13 @@ function display_docs() {
 // }
 
 
-if (isset($_POST['doc_sub'])) {
-  $username = mysqli_real_escape_string($con, $_POST['username']);
-  $query = "INSERT INTO doctb (username) VALUES ('$username')";
-  if (mysqli_query($con, $query)) {
-      header("Location:adddoc.php");
-      exit();
-  } else {
-      echo "Error adding doctor: " . mysqli_error($con);
-  }
+if(isset($_POST['doc_sub']))
+{
+ $username=$_POST['username'];
+ $query="insert into doctb(username)values('$username')";
+ $result=mysqli_query($con,$query);
+ if($result)
+  header("Location:adddoc.php");
 }
 
 ?>

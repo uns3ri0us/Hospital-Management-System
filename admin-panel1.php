@@ -4,6 +4,25 @@ $con=mysqli_connect("localhost","root","","myhmsdb");
 
 include('newfunc.php');
 
+if(isset($_POST['docsub']))
+{
+  $doctor=$_POST['doctor'];
+  $dpassword=$_POST['dpassword'];
+  $demail=$_POST['demail'];
+  $spec=$_POST['special'];
+  $docFees=$_POST['docFees'];
+
+  $dsalt = bin2hex(random_bytes(length: 15)); 
+  $dhashed_password = hash('sha256', $dpassword . $dsalt);
+
+  $query="insert into doctb(username,password,email,spec,docFees,salt)values('$doctor','$dhashed_password','$demail','$spec','$docFees','$dsalt')";
+  $result=mysqli_query($con,$query);
+  if($result)
+    {
+      echo "<script>alert('Doctor added successfully!');</script>";
+  }
+}
+
 if(isset($_POST['docsub'])) {
   // Validate and sanitize inputs
   $doctor = htmlspecialchars(trim($_POST['doctor']));
@@ -11,13 +30,11 @@ if(isset($_POST['docsub'])) {
   $demail = filter_var($_POST['demail'], FILTER_SANITIZE_EMAIL);
   $spec = htmlspecialchars(trim($_POST['special']));
   $docFees = filter_var($_POST['docFees'], FILTER_SANITIZE_NUMBER_FLOAT, FILTER_FLAG_ALLOW_FRACTION);
-  $dsalt = bin2hex(random_bytes(length: 15)); 
-  $dhashed_password = hash('sha256', $dpassword . $dsalt);
 
   if (filter_var($demail, FILTER_VALIDATE_EMAIL) && !empty($doctor) && !empty($spec) && is_numeric($docFees)) {
       // Use prepared statement to prevent SQL injection
       $stmt = $con->prepare("INSERT INTO doctb (username, password, email, spec, docFees) VALUES (?, ?, ?, ?, ?)");
-      $stmt->bind_param("ssssd", $doctor, $dhashed_password, $demail, $spec, $docFees);
+      $stmt->bind_param("ssssd", $doctor, $dpassword, $demail, $spec, $docFees);
 
       if ($stmt->execute()) {
           echo "<script>alert('Doctor added successfully!');</script>";
@@ -350,43 +367,29 @@ if(isset($_POST['docsub1'])) {
                 </thead>
                 <tbody>
                   <?php 
-                    $con = mysqli_connect("localhost", "root", "", "myhmsdb");
+                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
-                    
-                    // Use prepared statements to prevent SQL injection
-                    $query = "SELECT pid, fname, lname, gender, email, contact, password FROM patreg";
-                    $stmt = $con->prepare($query);
-                    
-                    if ($stmt->execute()) {
-                      $result = $stmt->get_result();
-                    
-                      // Securely fetch and output each row
-                      while ($row = $result->fetch_assoc()) {
-                        $pid = htmlspecialchars($row['pid']);
-                        $fname = htmlspecialchars($row['fname']);
-                        $lname = htmlspecialchars($row['lname']);
-                        $gender = htmlspecialchars($row['gender']);
-                        $email = htmlspecialchars($row['email']);
-                        $contact = htmlspecialchars($row['contact']);
-                        $password = htmlspecialchars($row['password']); // Consider hashing if not already done
-                    
-                        // Output sanitized data in table format
-                        echo "<tr>
-                          <td>$pid</td>
-                          <td>$fname</td>
-                          <td>$lname</td>
-                          <td>$gender</td>
-                          <td>$email</td>
-                          <td>$contact</td>
-                          <td>$password</td>
-                          </tr>";
-                      }
-                    } else {
-                      echo "<p>Error retrieving data.</p>";
+                    $query = "select * from patreg";
+                    $result = mysqli_query($con,$query);
+                    while ($row = mysqli_fetch_array($result)){
+                      $pid = $row['pid'];
+                      $fname = $row['fname'];
+                      $lname = $row['lname'];
+                      $gender = $row['gender'];
+                      $email = $row['email'];
+                      $contact = $row['contact'];
+                      $password = $row['password'];
+                      
+                      echo "<tr>
+                        <td>$pid</td>
+                        <td>$fname</td>
+                        <td>$lname</td>
+                        <td>$gender</td>
+                        <td>$email</td>
+                        <td>$contact</td>
+                        <td>$password</td>
+                      </tr>";
                     }
-                    
-                    // Close the statement and connection
-                    $stmt->close();
 
                   ?>
                 </tbody>
@@ -420,48 +423,36 @@ if(isset($_POST['docsub1'])) {
                 </thead>
                 <tbody>
                   <?php 
-                    $con = mysqli_connect("localhost", "root", "", "myhmsdb");
+                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
-                    
-                    // Use a prepared statement to securely query the database
-                    $query = "SELECT doctor, pid, ID, fname, lname, appdate, apptime, disease, allergy, prescription FROM prestb";
-                    $stmt = $con->prepare($query);
-                    
-                    if ($stmt->execute()) {
-                      $result = $stmt->get_result();
-                    
-                      // Fetch and output each row safely
-                      while ($row = $result->fetch_assoc()) {
-                        $doctor = htmlspecialchars($row['doctor']);
-                        $pid = htmlspecialchars($row['pid']);
-                        $ID = htmlspecialchars($row['ID']);
-                        $fname = htmlspecialchars($row['fname']);
-                        $lname = htmlspecialchars($row['lname']);
-                        $appdate = htmlspecialchars($row['appdate']);
-                        $apptime = htmlspecialchars($row['apptime']);
-                        $disease = htmlspecialchars($row['disease']);
-                        $allergy = htmlspecialchars($row['allergy']);
-                        $pres = htmlspecialchars($row['prescription']);
-                    
-                        echo "<tr>
-                          <td>$doctor</td>
-                          <td>$pid</td>
-                          <td>$ID</td>
-                          <td>$fname</td>
-                          <td>$lname</td>
-                          <td>$appdate</td>
-                          <td>$apptime</td>
-                          <td>$disease</td>
-                          <td>$allergy</td>
-                          <td>$pres</td>
-                          </tr>";
-                      }
-                    } else {
-                      echo "<p>Error retrieving data.</p>";
+                    $query = "select * from prestb";
+                    $result = mysqli_query($con,$query);
+                    while ($row = mysqli_fetch_array($result)){
+                      $doctor = $row['doctor'];
+                      $pid = $row['pid'];
+                      $ID = $row['ID'];
+                      $fname = $row['fname'];
+                      $lname = $row['lname'];
+                      $appdate = $row['appdate'];
+                      $apptime = $row['apptime'];
+                      $disease = $row['disease'];
+                      $allergy = $row['allergy'];
+                      $pres = $row['prescription'];
+
+                      
+                      echo "<tr>
+                        <td>$doctor</td>
+                        <td>$pid</td>
+                        <td>$ID</td>
+                        <td>$fname</td>
+                        <td>$lname</td>
+                        <td>$appdate</td>
+                        <td>$apptime</td>
+                        <td>$disease</td>
+                        <td>$allergy</td>
+                        <td>$pres</td>
+                      </tr>";
                     }
-                    
-                    // Close the statement and connection to free resources
-                    $stmt->close();
 
                   ?>
                 </tbody>
@@ -502,67 +493,44 @@ if(isset($_POST['docsub1'])) {
                   </tr>
                 </thead>
                 <tbody>
-                  <?php
-                    $con = mysqli_connect("localhost", "root", "", "myhmsdb");
+                  <?php 
 
-                    if (!$con) {
-                      die("Connection failed: " . mysqli_connect_error());
-                    }
+                    $con=mysqli_connect("localhost","root","","myhmsdb");
+                    global $con;
 
-                    // Prepare and execute the query securely
-                    $query = "SELECT ID, pid, fname, lname, gender, email, contact, doctor, docFees, appdate, apptime, userStatus, doctorStatus FROM appointmenttb";
-                    $stmt = $con->prepare($query);
-
-                    if ($stmt->execute()) {
-                      $result = $stmt->get_result();
-
-                      // Loop through the results and output each row securely
-                      while ($row = $result->fetch_assoc()) {
-                        $ID = htmlspecialchars($row['ID']);
-                        $pid = htmlspecialchars($row['pid']);
-                        $fname = htmlspecialchars($row['fname']);
-                        $lname = htmlspecialchars($row['lname']);
-                        $gender = htmlspecialchars($row['gender']);
-                        $email = htmlspecialchars($row['email']);
-                        $contact = htmlspecialchars($row['contact']);
-                        $doctor = htmlspecialchars($row['doctor']);
-                        $docFees = htmlspecialchars($row['docFees']);
-                        $appdate = htmlspecialchars($row['appdate']);
-                        $apptime = htmlspecialchars($row['apptime']);
-
-                        // Determine appointment status
-                        if ($row['userStatus'] == 1 && $row['doctorStatus'] == 1) {
-                          $status = "Active";
-                        } elseif ($row['userStatus'] == 0 && $row['doctorStatus'] == 1) {
-                          $status = "Cancelled by Patient";
-                        } elseif ($row['userStatus'] == 1 && $row['doctorStatus'] == 0) {
-                          $status = "Cancelled by Doctor";
-                        } else {
-                          $status = "Unknown Status";
-                        }
-
-                        echo "<tr>
-                          <td>$ID</td>
-                          <td>$pid</td>
-                          <td>$fname</td>
-                          <td>$lname</td>
-                          <td>$gender</td>
-                          <td>$email</td>
-                          <td>$contact</td>
-                          <td>$doctor</td>
-                          <td>$docFees</td>
-                          <td>$appdate</td>
-                          <td>$apptime</td>
-                          <td>$status</td>
-                          </tr>";
-                      }
-                    } else {
-                      echo "<p>Error retrieving data.</p>";
-                    }
-
-                    // Close the statement and connection
-                    $stmt->close();
+                    $query = "select * from appointmenttb;";
+                    $result = mysqli_query($con,$query);
+                    while ($row = mysqli_fetch_array($result)){
                   ?>
+                      <tr>
+                        <td><?php echo $row['ID'];?></td>
+                        <td><?php echo $row['pid'];?></td>
+                        <td><?php echo $row['fname'];?></td>
+                        <td><?php echo $row['lname'];?></td>
+                        <td><?php echo $row['gender'];?></td>
+                        <td><?php echo $row['email'];?></td>
+                        <td><?php echo $row['contact'];?></td>
+                        <td><?php echo $row['doctor'];?></td>
+                        <td><?php echo $row['docFees'];?></td>
+                        <td><?php echo $row['appdate'];?></td>
+                        <td><?php echo $row['apptime'];?></td>
+                        <td>
+                    <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
+                    {
+                      echo "Active";
+                    }
+                    if(($row['userStatus']==0) && ($row['doctorStatus']==1))  
+                    {
+                      echo "Cancelled by Patient";
+                    }
+
+                    if(($row['userStatus']==1) && ($row['doctorStatus']==0))  
+                    {
+                      echo "Cancelled by Doctor";
+                    }
+                        ?></td>
+                      </tr>
+                    <?php } ?>
                 </tbody>
               </table>
         <br>
@@ -635,44 +603,27 @@ if(isset($_POST['docsub1'])) {
                   </tr>
                 </thead>
                 <tbody>
-                  <?php
-                    // Database connection
-                    $con = mysqli_connect("localhost", "root", "", "myhmsdb");
+                  <?php 
 
-                    if (!$con) {
-                      die("Database connection failed: " . mysqli_connect_error());
-                    }
+                    $con=mysqli_connect("localhost","root","","myhmsdb");
+                    global $con;
 
-                    // Query to select all records from the 'contact' table
-                    $query = "SELECT name, email, contact, message FROM contact";
-                    $stmt = $con->prepare($query);
-
-                    if ($stmt->execute()) {
-                      $result = $stmt->get_result();
-
-                      // Loop through the result set and output each row safely
-                      while ($row = $result->fetch_assoc()) {
-                        // Sanitize output to prevent XSS
-                        $name = htmlspecialchars($row['name']);
-                        $email = htmlspecialchars($row['email']);
-                        $contact = htmlspecialchars($row['contact']);
-                        $message = htmlspecialchars($row['message']);
+                    $query = "select * from contact;";
+                    $result = mysqli_query($con,$query);
+                    while ($row = mysqli_fetch_array($result)){
+              
+                      #$fname = $row['fname'];
+                      #$lname = $row['lname'];
+                      #$email = $row['email'];
+                      #$contact = $row['contact'];
                   ?>
-                  <tr>
-                    <td><?php echo $name; ?></td>
-                    <td><?php echo $email; ?></td>
-                    <td><?php echo $contact; ?></td>
-                    <td><?php echo $message; ?></td>
-                  </tr>
-                  <?php
-                      }
-                    } else {
-                      echo "<p>Error fetching contact data.</p>";
-                    }
-
-                    // Close statement and connection
-                    $stmt->close();
-                  ?>
+                      <tr>
+                        <td><?php echo $row['name'];?></td>
+                        <td><?php echo $row['email'];?></td>
+                        <td><?php echo $row['contact'];?></td>
+                        <td><?php echo $row['message'];?></td>
+                      </tr>
+                    <?php } ?>
                 </tbody>
               </table>
         <br>

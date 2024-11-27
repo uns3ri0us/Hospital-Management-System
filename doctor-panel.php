@@ -2,33 +2,15 @@
 <?php 
 include('func1.php');
 $con=mysqli_connect("localhost","root","","myhmsdb");
-if (!isset($_SESSION['dname'])) {
-  echo "<script>alert('Please log in as a doctor to cancel appointments.');</script>";
-  echo "<script>window.location.href = 'login.php';</script>";
-  exit;
-}
-
-// Retrieve doctor name from session
 $doctor = $_SESSION['dname'];
-
-// Check if cancel request is sent
-if (isset($_GET['cancel']) && isset($_GET['ID'])) {
-  // Sanitize the ID to prevent SQL injection
-  $appointment_id = intval($_GET['ID']); // Convert to integer
-
-  // Use prepared statements for SQL query
-  $stmt = $con->prepare("UPDATE appointmenttb SET doctorStatus = '0' WHERE ID = ?");
-  $stmt->bind_param("i", $appointment_id);
-
-  // Execute the query and provide feedback
-  if ($stmt->execute()) {
-      echo "<script>alert('Your appointment has been successfully cancelled');</script>";
-  } else {
-      echo "<script>alert('Failed to cancel the appointment. Please try again later.');</script>";
+if(isset($_GET['cancel']))
+  {
+    $query=mysqli_query($con,"update appointmenttb set doctorStatus='0' where ID = '".$_GET['ID']."'");
+    if($query)
+    {
+      echo "<script>alert('Your appointment successfully cancelled');</script>";
+    }
   }
-}
-  // Close the statement and connection
-  $stmt->close();
 
   // if(isset($_GET['prescribe'])){
     
@@ -199,20 +181,9 @@ if (isset($_GET['cancel']) && isset($_GET['ID'])) {
                   <?php 
                     $con=mysqli_connect("localhost","root","","myhmsdb");
                     global $con;
-                    if (!$con) {
-                      die("Connection failed: " . mysqli_connect_error());
-                    }
-                    if (!isset($_SESSION['dname'])) {
-                      echo "<script>alert('Please log in as a doctor to view appointments.');</script>";
-                      echo "<script>window.location.href = 'login.php';</script>";
-                      exit;
-                    }
                     $dname = $_SESSION['dname'];
-                    $query = $con->prepare("SELECT pid, ID, fname, lname, gender, email, contact, appdate, apptime, userStatus, doctorStatus FROM appointmenttb WHERE doctor = ?");
-                    $query->bind_param("s", $dname);
-                    $query->execute();
-                    $result = $query->get_result();
-
+                    $query = "select pid,ID,fname,lname,gender,email,contact,appdate,apptime,userStatus,doctorStatus from appointmenttb where doctor='$dname';";
+                    $result = mysqli_query($con,$query);
                     while ($row = mysqli_fetch_array($result)){
                       ?>
                       <tr>
@@ -273,10 +244,7 @@ if (isset($_GET['cancel']) && isset($_GET['ID'])) {
 
 
                       </tr></a>
-                    <?php } 
-                      $result->free();
-                      $query->close();
-                    ?>
+                    <?php } ?>
                 </tbody>
               </table>
         <br>
@@ -303,54 +271,35 @@ if (isset($_GET['cancel']) && isset($_GET['ID'])) {
                 </thead>
                 <tbody>
                   <?php 
-                    $con = mysqli_connect("localhost", "root", "", "myhmsdb");
 
-                    if (!$con) {
-                      die("Connection failed: " . mysqli_connect_error());
+                    $con=mysqli_connect("localhost","root","","myhmsdb");
+                    global $con;
+
+                    $query = "select pid,fname,lname,ID,appdate,apptime,disease,allergy,prescription from prestb where doctor='$doctor';";
+                    
+                    $result = mysqli_query($con,$query);
+                    if(!$result){
+                      echo mysqli_error($con);
                     }
+                    
 
-                    if (!isset($_SESSION['doctor'])) {
-                      echo "<script>alert('Please log in as a doctor to access prescriptions.');</script>";
-                      echo "<script>window.location.href = 'login.php';</script>";
-                      exit;
-                    }
-
-                    // Retrieve the doctor’s name securely from the session
-                    $doctor = $_SESSION['doctor'];
-
-                    // Use a prepared statement to query data securely
-                    $query = $con->prepare("SELECT pid, fname, lname, ID, appdate, apptime, disease, allergy, prescription FROM prestb WHERE doctor = ?");
-                    $query->bind_param("s", $doctor);
-                    $query->execute();
-                    $result = $query->get_result();
-
-                    if (!$result) {
-                      echo "Error: " . mysqli_error($con);
-                      exit;
-                    }
-
-                    // Loop through the results and display the data
-                    while ($row = $result->fetch_assoc()) {
+                    while ($row = mysqli_fetch_array($result)){
                   ?>
-                    <tr>
-                      <td><?php echo htmlspecialchars($row['pid']); ?></td>
-                      <td><?php echo htmlspecialchars($row['fname']); ?></td>
-                      <td><?php echo htmlspecialchars($row['lname']); ?></td>
-                      <td><?php echo htmlspecialchars($row['ID']); ?></td>
-                      <td><?php echo htmlspecialchars($row['appdate']); ?></td>
-                      <td><?php echo htmlspecialchars($row['apptime']); ?></td>
-                      <td><?php echo htmlspecialchars($row['disease']); ?></td>
-                      <td><?php echo htmlspecialchars($row['allergy']); ?></td>
-                      <td><?php echo htmlspecialchars($row['prescription']); ?></td>
-                    </tr>
-                  <?php 
-                    }
-
-                    // Free result and close connections
-                    $result->free();
-                    $query->close();
-                  ?>
-
+                      <tr>
+                        <td><?php echo $row['pid'];?></td>
+                        <td><?php echo $row['fname'];?></td>
+                        <td><?php echo $row['lname'];?></td>
+                        <td><?php echo $row['ID'];?></td>
+                        
+                        <td><?php echo $row['appdate'];?></td>
+                        <td><?php echo $row['apptime'];?></td>
+                        <td><?php echo $row['disease'];?></td>
+                        <td><?php echo $row['allergy'];?></td>
+                        <td><?php echo $row['prescription'];?></td>
+                    
+                      </tr>
+                    <?php }
+                    ?>
                 </tbody>
               </table>
       </div>
@@ -375,36 +324,30 @@ if (isset($_GET['cancel']) && isset($_GET['ID'])) {
                 </thead>
                 <tbody>
                   <?php 
-                    // Establish database connection securely
-                    $con = mysqli_connect("localhost", "root", "", "myhmsdb");
 
-                    if (!$con) {
-                      die("Connection failed: " . mysqli_connect_error());
-                    }
+                    $con=mysqli_connect("localhost","root","","myhmsdb");
+                    global $con;
 
-                    // Prepare the SQL query
-                    $query = "SELECT fname, lname, email, contact, doctor, docFees, appdate, apptime FROM appointmenttb";
-                    $result = mysqli_query($con, $query);
-
-                    if (!$result) {
-                      echo "Error fetching appointments: " . mysqli_error($con);
-                      exit;
-                    }
-
-                    // Display the fetched appointments in an HTML table format
-                    while ($row = mysqli_fetch_assoc($result)) {
+                    $query = "select * from appointmenttb;";
+                    $result = mysqli_query($con,$query);
+                    while ($row = mysqli_fetch_array($result)){
+              
+                      #$fname = $row['fname'];
+                      #$lname = $row['lname'];
+                      #$email = $row['email'];
+                      #$contact = $row['contact'];
                   ?>
-                    <tr>
-                      <td><?php echo htmlspecialchars($row['fname']); ?></td>
-                      <td><?php echo htmlspecialchars($row['lname']); ?></td>
-                      <td><?php echo htmlspecialchars($row['email']); ?></td>
-                      <td><?php echo htmlspecialchars($row['contact']); ?></td>
-                      <td><?php echo htmlspecialchars($row['doctor']); ?></td>
-                      <td><?php echo htmlspecialchars($row['docFees']); ?></td>
-                      <td><?php echo htmlspecialchars($row['appdate']); ?></td>
-                      <td><?php echo htmlspecialchars($row['apptime']); ?></td>
-                    </tr>
-                  <?php } ?>
+                      <tr>
+                        <td><?php echo $row['fname'];?></td>
+                        <td><?php echo $row['lname'];?></td>
+                        <td><?php echo $row['email'];?></td>
+                        <td><?php echo $row['contact'];?></td>
+                        <td><?php echo $row['doctor'];?></td>
+                        <td><?php echo $row['docFees'];?></td>
+                        <td><?php echo $row['appdate'];?></td>
+                        <td><?php echo $row['apptime'];?></td>
+                      </tr>
+                    <?php } ?>
                 </tbody>
               </table>
         <br>
