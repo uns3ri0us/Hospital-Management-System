@@ -282,6 +282,7 @@ if(isset($_POST['docsub1'])) {
                     <th scope="col">Doctor Name</th>
                     <th scope="col">Specialization</th>
                     <th scope="col">Email</th>
+                    <th scope="col">Password</th>
                     <th scope="col">Fees</th>
                   </tr>
                 </thead>
@@ -291,7 +292,7 @@ if(isset($_POST['docsub1'])) {
                     global $con;
                     
                     // Prepared statement to prevent SQL injection
-                    $query = "SELECT username, spec, email, docFees FROM doctb";
+                    $query = "SELECT username, spec, email, password, docFees FROM doctb";
                     $stmt = $con->prepare($query);
                     
                     if ($stmt->execute()) {
@@ -302,6 +303,7 @@ if(isset($_POST['docsub1'])) {
                         $username = htmlspecialchars($row['username']);
                         $spec = htmlspecialchars($row['spec']);
                         $email = htmlspecialchars($row['email']);
+                        $password = htmlspecialchars($row['password']); // Consider hashing if not already done
                         $docFees = htmlspecialchars($row['docFees']);
                     
                           // Output
@@ -309,6 +311,7 @@ if(isset($_POST['docsub1'])) {
                         <td>$username</td>
                         <td>$spec</td>
                         <td>$email</td>
+                        <td>$password</td>
                         <td>$docFees</td>
                         </tr>";
                       }
@@ -342,30 +345,44 @@ if(isset($_POST['docsub1'])) {
                     <th scope="col">Gender</th>
                     <th scope="col">Email</th>
                     <th scope="col">Contact</th>
+                    <th scope="col">Password</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php 
                     $con = mysqli_connect("localhost", "root", "", "myhmsdb");
                     global $con;
-                    $query = "select * from patreg";
-                    $result = mysqli_query($con,$query);
-                    while ($row = mysqli_fetch_array($result)){
-                      $pid = $row['pid'];
-                      $fname = $row['fname'];
-                      $lname = $row['lname'];
-                      $gender = $row['gender'];
-                      $email = $row['email'];
-                      $contact = $row['contact'];
-                      
-                      echo "<tr>
-                        <td>$pid</td>
-                        <td>$fname</td>
-                        <td>$lname</td>
-                        <td>$gender</td>
-                        <td>$email</td>
-                        <td>$contact</td>
-                      </tr>";
+                    
+                    // Use prepared statements to prevent SQL injection
+                    $query = "SELECT pid, fname, lname, gender, email, contact, password FROM patreg";
+                    $stmt = $con->prepare($query);
+                    
+                    if ($stmt->execute()) {
+                      $result = $stmt->get_result();
+                    
+                      // Securely fetch and output each row
+                      while ($row = $result->fetch_assoc()) {
+                        $pid = htmlspecialchars($row['pid']);
+                        $fname = htmlspecialchars($row['fname']);
+                        $lname = htmlspecialchars($row['lname']);
+                        $gender = htmlspecialchars($row['gender']);
+                        $email = htmlspecialchars($row['email']);
+                        $contact = htmlspecialchars($row['contact']);
+                        $password = htmlspecialchars($row['password']); // Consider hashing if not already done
+                    
+                        // Output sanitized data in table format
+                        echo "<tr>
+                          <td>$pid</td>
+                          <td>$fname</td>
+                          <td>$lname</td>
+                          <td>$gender</td>
+                          <td>$email</td>
+                          <td>$contact</td>
+                          <td>$password</td>
+                          </tr>";
+                      }
+                    } else {
+                      echo "<p>Error retrieving data.</p>";
                     }
                     
                     // Close the statement and connection
